@@ -124,11 +124,11 @@ const viewEmployees = () => {
 };
 // VIEW ALL
 const viewAll = () => {
-    let viewingAll = 'SELECT employee.first_name, employee.last_name, role.title, role.salary, department.name';
+    let viewingAll = 'SELECT employee.first_name, employee.last_name, department.name AS department, role.title, role.salary ';
     viewingAll +=
-        'FROM ((employee INNER JOIN role ON employee.role_id = role.id ) ';
+        'FROM employee LEFT JOIN role ON employee.role_id = role.id ';
     viewingAll +=
-        'INNER JOIN department ON employee.department_id = department.id);';
+        'LEFT JOIN department department ON role.department_id = department.id';
 
     connection.query(viewingAll, (err, res) => {
         if (err) throw err;
@@ -182,14 +182,14 @@ const addDepartment = () => {
     inquirer.prompt([
         {
             type: "input",
-            name: "newDept",
+            name: "name",
             message: "New department name is:"
         }
     ])
         .then((res) => {
-            let insertDept = 'INSERT INTO department (name) VALUES (?);';
+            let query = 'INSERT INTO department SET ?';
 
-            connection.query(insertDept, [res.newDept], (err, res) => {
+            connection.query(query, res, (err, res) => {
                 if (err) throw err;
                 console.log("New department added!");
 
@@ -213,14 +213,14 @@ const addRole = () => {
         },
         {
             type: "input",
-            name: "deptId",
+            name: "department_id",
             message: "This new role's department ID?"
         }
     ])
         .then((res) => {
             let insertRole = 'INSERT INTO role (title, salary, department_id) VALUES (?, ?, ?);';
 
-            connection.query(insertRole, [res.title, res.salary, res.deptId], (err, res) => {
+            connection.query(insertRole, [res.title, res.salary, res.department_id], (err, res) => {
                 if (err) throw err;
                 console.log("New role added!");
 
@@ -265,25 +265,49 @@ const addEmployee = () => {
 }
 
 // UPDATE MENU Prompt in Terminal
-const updateMenu = () => {
-    inquirer.prompt([
-        {
-            type: "list",
-            name: "updateMenu",
-            message: "Choose an employee to update:",
-            choices: [
-                // get employee names to show here
-            ],
-        }
-    ])
-        .then((data) => {
-            console.log(data);
-            // display the chosen employee's name, role, department
-            switch (data.updateMenu) {
-                // incorportate another imquirer.prompt to ask which detail of the employee's info you would like to update
-
-            }
+const updateMenu = async () => {
+    var employees = await connection.query('SELECT * FROM employee', (err, employees) => {
+        if (err) throw err;
+        // console.log('HERE ARE EMPLOYEES:', employees);
+        const employeeChoices = employees.map(({ id, first_name, last_name }) => {
+            return { name: `${first_name} ${last_name}`, value: id }
         });
+        inquirer.prompt([
+            {
+                type: "list",
+                name: "employeeId",
+                message: "Choose an employee to update:",
+                choices: employeeChoices
+            }
+        ])
+            .then((employeeID) => {
+                // display the chosen employee's possible roles you could update them to
+                // console.log(employeeId);
+                connection.query('SELECT * FROM role', (err, roles) => {
+                    if (err) throw err;
+                    // console.log('HERE ARE EMPLOYEES:', roles);
+                    const roleChoices = roles.map(({ id, title }) => {
+                        return { name: `${title}`, value: id }
+                    });
+
+                    inquirer.prompt([
+                        {
+                            type: "list",
+                            name: "roles",
+                            message: "Choose a new role for the employee:",
+                            choices: roleChoices
+                        }
+                    ])
+                        .then((roleId) => {
+                            connection.query('UPDATE employee SET role_id = ? WHERE id = ?', [roleId.roles, employeeID.employeeId], (err, result) => {
+                                if (err) throw err;
+
+                                startMenu();
+                            })
+                        });
+                })
+            })
+    })
 }
 
 // Run the figlet style 'Employee Tracker' Header
