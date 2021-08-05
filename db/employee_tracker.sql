@@ -25,3 +25,11 @@ CREATE TABLE employee (
   role_id INT,
   manager_id INT NULL
 );
+
+-- Join the employee and role tables
+SELECT employee.first_name, employee.last_name AS employee, role.title, role.salary AS role FROM employee JOIN role ON employee.role_id = role.id;
+
+-- Joins all 3 tables
+SELECT employee.first_name, employee.last_name, role.title, role.salary, department.name 
+  FROM ((employee INNER JOIN role ON employee.role_id = role.id ) 
+  INNER JOIN department ON employee.department_id = department.id);
