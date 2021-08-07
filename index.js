@@ -313,6 +313,12 @@ const updateMenu = async () => {
     })
 }
 
+// Connect to the DB
+connection.connect((err) => {
+    if (err) throw err;
+    console.log("We are connected!");
+});
+
 // Run the figlet style 'Employee Tracker' Header
 figlet('Employee Tracker', function (err, data) {
     if (err) {
@@ -323,10 +329,4 @@ figlet('Employee Tracker', function (err, data) {
     console.log(data)
     // Start the Start Menu prompts
     startMenu();
-});
-
-// Connect to the DB
-connection.connect((err) => {
-    if (err) throw err;
-    console.log("We are connected!");
 });
