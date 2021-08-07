@@ -1,4 +1,4 @@
-const connection = require("./db/connection");
+const connection = require("./config/connection");
 const mysql = require("mysql");
 const inquirer = require("inquirer");
 const figlet = require('figlet');
@@ -122,6 +122,7 @@ const viewEmployees = () => {
         viewMenu();
     })
 };
+
 // VIEW ALL
 const viewAll = () => {
     let viewingAll = 'SELECT employee.first_name, employee.last_name, department.name AS department, role.title, role.salary ';
@@ -268,10 +269,12 @@ const addEmployee = () => {
 const updateMenu = async () => {
     var employees = await connection.query('SELECT * FROM employee', (err, employees) => {
         if (err) throw err;
-        // console.log('HERE ARE EMPLOYEES:', employees);
+
+        // display employees you can choose to update
         const employeeChoices = employees.map(({ id, first_name, last_name }) => {
             return { name: `${first_name} ${last_name}`, value: id }
         });
+
         inquirer.prompt([
             {
                 type: "list",
@@ -281,11 +284,10 @@ const updateMenu = async () => {
             }
         ])
             .then((employeeID) => {
-                // display the chosen employee's possible roles you could update them to
-                // console.log(employeeId);
                 connection.query('SELECT * FROM role', (err, roles) => {
                     if (err) throw err;
-                    // console.log('HERE ARE EMPLOYEES:', roles);
+
+                    // display the chosen employee's possible roles you could update them to
                     const roleChoices = roles.map(({ id, title }) => {
                         return { name: `${title}`, value: id }
                     });
@@ -298,6 +300,7 @@ const updateMenu = async () => {
                             choices: roleChoices
                         }
                     ])
+                        // update the employee's role
                         .then((roleId) => {
                             connection.query('UPDATE employee SET role_id = ? WHERE id = ?', [roleId.roles, employeeID.employeeId], (err, result) => {
                                 if (err) throw err;
